@@ -10,7 +10,7 @@ const passport = require('passport');
 const OpenAI = require('openai');
 require('dotenv').config();
 require('./middleware/passport');
-app.set('trust proxy', true);
+
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const customerRoutes = require('./routes/customer.routes');
@@ -25,6 +25,7 @@ const app = express();
 const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
 
 // Middleware
+app.set('trust proxy', true);
 app.use(helmet());
 app.use(cors({
   origin: 'http://localhost:3000',

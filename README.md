@@ -1,4 +1,4 @@
-# CRM Campaign Management App
+# CRM Customer Relationship Management System
 
 A modern CRM platform for ingesting customer data, building audience segments, and running personalized campaigns with robust delivery tracking and a clean, intuitive UI.
 

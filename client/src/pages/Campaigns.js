@@ -23,7 +23,8 @@ import {
   InputLabel,
   Select,
   Divider,
-  LinearProgress
+  LinearProgress,
+  Paper
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -36,7 +37,7 @@ import {
   ContentCopy as CopyIcon,
   BarChart as ChartIcon
 } from '@mui/icons-material';
-import { campaignAPI, segmentAPI } from '../services/api';
+import { campaignAPI, segmentAPI, aiAPI } from '../services/api';
 
 const columnsBase = [
   { field: 'name', headerName: 'Campaign Name', width: 200 },
@@ -120,6 +121,9 @@ function Campaigns() {
   const [segments, setSegments] = useState([]);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [aiMsgPrompt, setAiMsgPrompt] = useState('');
+  const [aiMsgLoading, setAiMsgLoading] = useState(false);
+  const [aiMsgSuggestions, setAiMsgSuggestions] = useState([]);
 
   const fetchCampaigns = async () => {
     setLoading(true);
@@ -280,6 +284,26 @@ function Campaigns() {
     }
   };
 
+  // AI: Message Suggestions
+  const handleAiMsgPrompt = async () => {
+    if (!aiMsgPrompt.trim()) return;
+    setAiMsgLoading(true);
+    setAiMsgSuggestions([]);
+    try {
+      const res = await aiAPI.messageSuggestions(aiMsgPrompt);
+      if (res.data.suggestions && res.data.suggestions.length > 0) {
+        setAiMsgSuggestions(res.data.suggestions);
+      } else {
+        setAiMsgSuggestions([]);
+      }
+    } catch (err) {
+      setAiMsgSuggestions([]);
+      setSnackbar({ open: true, message: 'AI error: ' + (err.response?.data?.message || err.message), severity: 'error' });
+    } finally {
+      setAiMsgLoading(false);
+    }
+  };
+
   const columns = [
     ...columnsBase,
     {
@@ -287,13 +311,18 @@ function Campaigns() {
       headerName: 'Actions',
       width: 150,
       renderCell: (params) => (
-        <>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Edit">
+            <IconButton onClick={() => handleOpenDialog('edit', params.row)} size="small">
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="More options">
             <IconButton onClick={(e) => handleMenuOpen(e, params.row)} size="small">
               <MoreVertIcon />
             </IconButton>
           </Tooltip>
-        </>
+        </Box>
       ),
       sortable: false,
       filterable: false,
@@ -327,10 +356,25 @@ function Campaigns() {
             columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10, 25, 50]}
+            checkboxSelection
             disableSelectionOnClick
-            sx={{
-              '& .MuiDataGrid-cell:focus': {
-                outline: 'none',
+            loading={loading}
+            error={error}
+            sx={{ 
+              height: 400, 
+              width: '100%',
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-row:nth-of-type(odd)': {
+                backgroundColor: '#f8fafc',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f1f5f9',
+                borderBottom: '2px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontWeight: 600,
               },
             }}
           />
@@ -385,6 +429,40 @@ function Campaigns() {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  <b>Describe your campaign objective</b>
+                </Typography>
+                <Box display="flex" gap={1}>
+                  <TextField
+                    value={aiMsgPrompt}
+                    onChange={e => setAiMsgPrompt(e.target.value)}
+                    placeholder="e.g. Bring back inactive users"
+                    size="small"
+                    fullWidth
+                    disabled={aiMsgLoading}
+                  />
+                  <Button
+                    onClick={handleAiMsgPrompt}
+                    disabled={aiMsgLoading || !aiMsgPrompt.trim()}
+                    variant="contained"
+                  >
+                    {aiMsgLoading ? <CircularProgress size={20} /> : 'Suggest Messages'}
+                  </Button>
+                </Box>
+                {aiMsgSuggestions.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>AI Suggestions:</Typography>
+                    {aiMsgSuggestions.map((msg, idx) => (
+                      <Paper key={idx} sx={{ p: 1, mb: 1, cursor: 'pointer', background: form.message === msg ? 'rgba(25, 118, 210, 0.08)' : undefined }} onClick={() => setForm({ ...form, message: msg })}>
+                        {msg}
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
+              </Box>
             </Grid>
             <Grid item xs={12}>
               <TextField

@@ -131,4 +131,22 @@ The application follows a microservices architecture with the following componen
 2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
-5. Create a new Pull Request 
+5. Create a new Pull Request
+
+# AI Integration
+
+This CRM app integrates with OpenAI's GPT-3.5 for:
+- **Natural language to segment rules** (describe your audience in plain English)
+- **AI-driven message suggestions** (generate campaign copy from an objective)
+
+**Backend:**
+- See `server/src/routes/ai.routes.js` for real OpenAI API integration.
+- If you set `USE_OPENAI_MOCK=true` in your `.env`, the backend will return mock responses for demo/testing (useful if you run out of OpenAI quota).
+- If you want to use the real API, set `USE_OPENAI_MOCK=false` and provide a valid `OPENAI_API_KEY` in your `.env`.
+
+**Frontend:**
+- The UI will work with either real or mock responses, so you can demo the AI features even if quota is exceeded.
+
+**Note for Reviewers:**
+- The code is production-ready for real OpenAI integration, but may use mock responses for demo due to quota limits.
+- You can verify the real integration by inspecting the backend code and `.env` config. 

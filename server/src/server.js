@@ -7,6 +7,7 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const path = require('path');
 const passport = require('passport');
+const OpenAI = require('openai');
 require('dotenv').config();
 require('./middleware/passport');
 
@@ -16,6 +17,7 @@ const customerRoutes = require('./routes/customer.routes');
 const campaignRoutes = require('./routes/campaign.routes');
 const segmentRoutes = require('./routes/segment.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
@@ -47,6 +49,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/segments', segmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Passport initialization
 app.use(passport.initialize());
@@ -70,4 +73,6 @@ mongoose.connect(process.env.MONGODB_URI)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); 
+});
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); 

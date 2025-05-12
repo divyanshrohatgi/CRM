@@ -27,7 +27,10 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Collapse,
+  Fade,
+  Zoom
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -39,9 +42,12 @@ import {
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
   Save as SaveIcon,
-  DragIndicator as DragIndicatorIcon
+  DragIndicator as DragIndicatorIcon,
+  Info as InfoIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
-import { segmentAPI } from '../services/api';
+import { segmentAPI, aiAPI } from '../services/api';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const OPERATORS = [
@@ -123,6 +129,9 @@ function Segments() {
   const [previewData, setPreviewData] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const navigate = useNavigate();
 
   const fetchSegments = async () => {
@@ -238,6 +247,13 @@ function Segments() {
     });
   };
 
+  const toggleGroup = (groupId) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
   const handlePreview = async () => {
     setPreviewLoading(true);
     try {
@@ -294,6 +310,30 @@ function Segments() {
     }
   };
 
+  // AI: Natural Language to Rules
+  const handleAiPrompt = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    try {
+      const res = await aiAPI.segmentRules(aiPrompt);
+      if (res.data.rules && res.data.rules.length > 0) {
+        // Assign all rules to the first group for simplicity
+        const groupId = form.groups[0]?.id || 'group-1';
+        setForm({
+          ...form,
+          rules: res.data.rules.map(r => ({ ...r, groupId })),
+        });
+        setSnackbar({ open: true, message: 'Rules generated from AI!', severity: 'success' });
+      } else {
+        setSnackbar({ open: true, message: 'No rules generated.', severity: 'warning' });
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'AI error: ' + (err.response?.data?.message || err.message), severity: 'error' });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const columns = [
     ...columnsBase,
     {
@@ -346,10 +386,25 @@ function Segments() {
             columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10, 25, 50]}
+            checkboxSelection
             disableSelectionOnClick
-            sx={{
-              '& .MuiDataGrid-cell:focus': {
-                outline: 'none',
+            loading={loading}
+            error={error}
+            sx={{ 
+              height: 400, 
+              width: '100%',
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-row:nth-of-type(odd)': {
+                backgroundColor: '#f8fafc',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f1f5f9',
+                borderBottom: '2px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontWeight: 600,
               },
             }}
           />
@@ -358,10 +413,19 @@ function Segments() {
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          {dialogMode === 'add' ? 'Create Segment' : 'Edit Segment'}
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6">
+              {dialogMode === 'add' ? 'Create Segment' : 'Edit Segment'}
+            </Typography>
+            <Tooltip title="Help">
+              <IconButton size="small">
+                <InfoIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 label="Segment Name"
@@ -370,6 +434,8 @@ function Segments() {
                 onChange={handleFormChange}
                 fullWidth
                 required
+                variant="outlined"
+                sx={{ mb: 2 }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -381,164 +447,241 @@ function Segments() {
                 fullWidth
                 multiline
                 rows={2}
+                variant="outlined"
+                sx={{ mb: 3 }}
               />
             </Grid>
             <Grid item xs={12}>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Segment Rules
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  <b>Describe your audience in plain English</b>
                 </Typography>
+                <Box display="flex" gap={1}>
+                  <TextField
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    placeholder="e.g. People who haven't shopped in 6 months and spent over ₹5K"
+                    size="small"
+                    fullWidth
+                    disabled={aiLoading}
+                  />
+                  <Button
+                    onClick={handleAiPrompt}
+                    disabled={aiLoading || !aiPrompt.trim()}
+                    variant="contained"
+                  >
+                    {aiLoading ? <CircularProgress size={20} /> : 'Generate Rules'}
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Typography variant="h6">
+                    Segment Rules
+                  </Typography>
+                  <Tooltip title="Add a new rule group">
+                    <Button
+                      startIcon={<AddCircleIcon />}
+                      onClick={addGroup}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Add Rule Group
+                    </Button>
+                  </Tooltip>
+                </Box>
                 <DragDropContext onDragEnd={handleDragEnd}>
                   {form.groups.map((group) => (
-                    <Paper key={group.id} sx={{ p: 2, mb: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <FormControl size="small" sx={{ minWidth: 200 }}>
-                          <InputLabel>Group Logic</InputLabel>
-                          <Select
-                            value={group.logic}
-                            onChange={(e) => handleGroupLogicChange(group.id, e.target.value)}
-                            label="Group Logic"
-                          >
-                            {LOGIC_OPERATORS.map((op) => (
-                              <MenuItem key={op.value} value={op.value}>
-                                {op.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                        {form.groups.length > 1 && (
-                          <IconButton
-                            color="error"
-                            onClick={() => removeGroup(group.id)}
-                            size="small"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </Box>
-                      <Droppable droppableId={group.id}>
-                        {(provided) => (
-                          <div {...provided.droppableProps} ref={provided.innerRef}>
-                            {form.rules
-                              .filter((rule) => rule.groupId === group.id)
-                              .map((rule, index) => (
-                                <Draggable
-                                  key={`${group.id}-${index}`}
-                                  draggableId={`${group.id}-${index}`}
-                                  index={index}
-                                >
-                                  {(provided) => (
-                                    <Paper
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      sx={{ p: 2, mb: 2 }}
+                    <Fade in={true} key={group.id}>
+                      <Paper 
+                        elevation={2} 
+                        sx={{ 
+                          p: 2, 
+                          mb: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 2
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <FormControl size="small" sx={{ minWidth: 250 }}>
+                              <InputLabel>Group Logic</InputLabel>
+                              <Select
+                                value={group.logic}
+                                onChange={(e) => handleGroupLogicChange(group.id, e.target.value)}
+                                label="Group Logic"
+                              >
+                                {LOGIC_OPERATORS.map((op) => (
+                                  <MenuItem key={op.value} value={op.value}>
+                                    {op.label}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            <Tooltip title="Toggle group visibility">
+                              <IconButton
+                                onClick={() => toggleGroup(group.id)}
+                                size="small"
+                              >
+                                {expandedGroups[group.id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                          {form.groups.length > 1 && (
+                            <Tooltip title="Remove group">
+                              <IconButton
+                                color="error"
+                                onClick={() => removeGroup(group.id)}
+                                size="small"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                        <Collapse in={expandedGroups[group.id] !== false}>
+                          <Droppable droppableId={group.id}>
+                            {(provided) => (
+                              <div {...provided.droppableProps} ref={provided.innerRef}>
+                                {form.rules
+                                  .filter((rule) => rule.groupId === group.id)
+                                  .map((rule, index) => (
+                                    <Draggable
+                                      key={`${group.id}-${index}`}
+                                      draggableId={`${group.id}-${index}`}
+                                      index={index}
                                     >
-                                      <Grid container spacing={2} alignItems="center">
-                                        <Grid item xs={1}>
-                                          <div {...provided.dragHandleProps}>
-                                            <DragIndicatorIcon />
-                                          </div>
-                                        </Grid>
-                                        <Grid item xs={11}>
-                                          <Grid container spacing={2}>
-                                            <Grid item xs={12} md={3}>
-                                              <FormControl fullWidth size="small">
-                                                <InputLabel>Field</InputLabel>
-                                                <Select
-                                                  value={rule.field}
-                                                  onChange={(e) =>
-                                                    handleRuleChange(index, 'field', e.target.value)
-                                                  }
-                                                  label="Field"
-                                                >
-                                                  {FIELDS.map((field) => (
-                                                    <MenuItem key={field.value} value={field.value}>
-                                                      {field.label}
-                                                    </MenuItem>
-                                                  ))}
-                                                </Select>
-                                              </FormControl>
+                                      {(provided, snapshot) => (
+                                        <Paper
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          elevation={snapshot.isDragging ? 3 : 1}
+                                          sx={{ 
+                                            p: 2, 
+                                            mb: 2,
+                                            backgroundColor: snapshot.isDragging ? 'action.hover' : 'background.paper',
+                                            transition: 'all 0.2s ease'
+                                          }}
+                                        >
+                                          <Grid container spacing={2} alignItems="center">
+                                            <Grid item xs={1}>
+                                              <Tooltip title="Drag to reorder">
+                                                <div {...provided.dragHandleProps}>
+                                                  <DragIndicatorIcon color="action" />
+                                                </div>
+                                              </Tooltip>
                                             </Grid>
-                                            <Grid item xs={12} md={3}>
-                                              <FormControl fullWidth size="small">
-                                                <InputLabel>Operator</InputLabel>
-                                                <Select
-                                                  value={rule.operator}
-                                                  onChange={(e) =>
-                                                    handleRuleChange(index, 'operator', e.target.value)
-                                                  }
-                                                  label="Operator"
-                                                >
-                                                  {OPERATORS.map((op) => (
-                                                    <MenuItem key={op.value} value={op.value}>
-                                                      {op.label}
-                                                    </MenuItem>
-                                                  ))}
-                                                </Select>
-                                              </FormControl>
-                                            </Grid>
-                                            <Grid item xs={12} md={4}>
-                                              <TextField
-                                                label="Value"
-                                                value={rule.value}
-                                                onChange={(e) =>
-                                                  handleRuleChange(index, 'value', e.target.value)
-                                                }
-                                                fullWidth
-                                                size="small"
-                                              />
-                                            </Grid>
-                                            <Grid item xs={12} md={1}>
-                                              <IconButton
-                                                color="error"
-                                                onClick={() => removeRule(index)}
-                                                disabled={form.rules.length === 1}
-                                              >
-                                                <RemoveCircleIcon />
-                                              </IconButton>
+                                            <Grid item xs={11}>
+                                              <Grid container spacing={2}>
+                                                <Grid item xs={12} md={3}>
+                                                  <FormControl fullWidth size="small">
+                                                    <InputLabel>Field</InputLabel>
+                                                    <Select
+                                                      value={rule.field}
+                                                      onChange={(e) =>
+                                                        handleRuleChange(index, 'field', e.target.value)
+                                                      }
+                                                      label="Field"
+                                                    >
+                                                      {FIELDS.map((field) => (
+                                                        <MenuItem key={field.value} value={field.value}>
+                                                          {field.label}
+                                                        </MenuItem>
+                                                      ))}
+                                                    </Select>
+                                                  </FormControl>
+                                                </Grid>
+                                                <Grid item xs={12} md={3}>
+                                                  <FormControl fullWidth size="small">
+                                                    <InputLabel>Operator</InputLabel>
+                                                    <Select
+                                                      value={rule.operator}
+                                                      onChange={(e) =>
+                                                        handleRuleChange(index, 'operator', e.target.value)
+                                                      }
+                                                      label="Operator"
+                                                    >
+                                                      {OPERATORS.map((op) => (
+                                                        <MenuItem key={op.value} value={op.value}>
+                                                          {op.label}
+                                                        </MenuItem>
+                                                      ))}
+                                                    </Select>
+                                                  </FormControl>
+                                                </Grid>
+                                                <Grid item xs={12} md={4}>
+                                                  <TextField
+                                                    label="Value"
+                                                    value={rule.value}
+                                                    onChange={(e) =>
+                                                      handleRuleChange(index, 'value', e.target.value)
+                                                    }
+                                                    fullWidth
+                                                    size="small"
+                                                  />
+                                                </Grid>
+                                                <Grid item xs={12} md={1}>
+                                                  <Tooltip title="Remove rule">
+                                                    <IconButton
+                                                      color="error"
+                                                      onClick={() => removeRule(index)}
+                                                      disabled={form.rules.length === 1}
+                                                      size="small"
+                                                    >
+                                                      <RemoveCircleIcon />
+                                                    </IconButton>
+                                                  </Tooltip>
+                                                </Grid>
+                                              </Grid>
                                             </Grid>
                                           </Grid>
-                                        </Grid>
-                                      </Grid>
-                                    </Paper>
-                                  )}
-                                </Draggable>
-                              ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                      <Button
-                        startIcon={<AddCircleIcon />}
-                        onClick={() => addRule(group.id)}
-                        variant="outlined"
-                        size="small"
-                        sx={{ mt: 1 }}
-                      >
-                        Add Rule to Group
-                      </Button>
-                    </Paper>
+                                        </Paper>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                          <Box display="flex" justifyContent="center" mt={2}>
+                            <Tooltip title="Add a new rule to this group">
+                              <Button
+                                startIcon={<AddCircleIcon />}
+                                onClick={() => addRule(group.id)}
+                                variant="outlined"
+                                size="small"
+                              >
+                                Add Rule to Group
+                              </Button>
+                            </Tooltip>
+                          </Box>
+                        </Collapse>
+                      </Paper>
+                    </Fade>
                   ))}
                 </DragDropContext>
-                <Button
-                  startIcon={<AddCircleIcon />}
-                  onClick={addGroup}
-                  variant="outlined"
-                  size="small"
-                  sx={{ mt: 2 }}
-                >
-                  Add Rule Group
-                </Button>
               </Box>
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handlePreview} disabled={previewLoading}>
-            {previewLoading ? <CircularProgress size={24} /> : 'Preview'}
+          <Button 
+            onClick={handlePreview} 
+            disabled={previewLoading}
+            startIcon={previewLoading ? <CircularProgress size={20} /> : <PeopleIcon />}
+          >
+            Preview
           </Button>
-          <Button onClick={handleSubmit} variant="contained" startIcon={<SaveIcon />}>
+          <Button 
+            onClick={handleSubmit} 
+            variant="contained" 
+            startIcon={<SaveIcon />}
+            color="primary"
+          >
             {dialogMode === 'add' ? 'Create' : 'Save'}
           </Button>
         </DialogActions>

@@ -1,8 +1,11 @@
 const express = require('express');
 const Segment = require('../models/segment.model');
 const Customer = require('../models/customer.model');
+const CommunicationLog = require('../models/communication-log.model');
+const vendorAPIService = require('../services/vendor-api.service');
 const { auth } = require('../middleware/auth.middleware');
 const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
@@ -73,10 +76,10 @@ router.post('/', auth, async (req, res) => {
     const { name, description, rules, groups, ruleLogic } = req.body;
 
     // Validate required fields
-    if (!name || !rules || !Array.isArray(rules) || !groups || !Array.isArray(groups)) {
+    if (!name || !rules || !Array.isArray(rules) || !groups || !Array.isArray(groups) || rules.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Name, rules array, and groups array are required'
+        message: 'Name, rules array (with at least one rule), and groups array are required'
       });
     }
 
@@ -100,14 +103,71 @@ router.post('/', auth, async (req, res) => {
       createdBy: req.user._id
     });
 
-    // Evaluate segment size
+    // Evaluate segment size and get matching customers
     const customers = await Customer.find();
     const matchingCustomers = await Promise.all(
-      customers.map(customer => segment.evaluateCustomer(customer))
+      customers.map(async customer => {
+        const matches = await segment.evaluateCustomer(customer);
+        return matches ? customer : null;
+      })
     );
-    segment.customerCount = matchingCustomers.filter(Boolean).length;
+    const matchedCustomers = matchingCustomers.filter(Boolean);
+    segment.customerCount = matchedCustomers.length;
 
     await segment.save();
+
+    // Create a campaign for this segment
+    const campaignId = new mongoose.Types.ObjectId();
+    const campaignName = `Welcome Campaign - ${segment.name}`;
+    const campaignMessage = `Hi {name}, here's 10% off on your next order!`;
+
+    // Create communication logs and send messages
+    const communicationPromises = matchedCustomers.map(async (customer) => {
+      try {
+        // Create communication log
+        const log = new CommunicationLog({
+          campaignId,
+          segmentId: segment._id,
+          customerId: customer._id,
+          message: campaignMessage.replace('{name}', customer.name),
+          createdBy: req.user._id
+        });
+
+        // Send message via vendor API
+        const vendorResponse = await vendorAPIService.sendMessage(
+          customer,
+          log.message
+        );
+
+        // Update log with vendor response
+        log.status = vendorResponse.status;
+        log.vendorResponse = vendorResponse;
+        log.lastAttempt = new Date();
+
+        await log.save();
+        return log;
+      } catch (error) {
+        logger.error(`Error sending message to customer ${customer._id}:`, error);
+        // Create failed log
+        const failedLog = new CommunicationLog({
+          campaignId,
+          segmentId: segment._id,
+          customerId: customer._id,
+          message: campaignMessage.replace('{name}', customer.name),
+          status: 'FAILED',
+          vendorResponse: {
+            error: error.message
+          },
+          lastAttempt: new Date(),
+          createdBy: req.user._id
+        });
+        await failedLog.save();
+        return failedLog;
+      }
+    });
+
+    // Wait for all communications to be processed
+    await Promise.all(communicationPromises);
 
     res.status(201).json({
       success: true,

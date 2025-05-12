@@ -32,7 +32,11 @@ import {
   MoreVert as MoreVertIcon,
   FilterList as FilterListIcon,
   Save as SaveIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  CheckCircle as CheckCircleIcon,
+  Star as StarIcon,
+  Block as BlockIcon,
+  Restore as RestoreIcon
 } from '@mui/icons-material';
 import { customerAPI, segmentAPI } from '../services/api';
 
@@ -43,14 +47,36 @@ const columnsBase = [
     field: 'status',
     headerName: 'Status',
     width: 120,
-    renderCell: (params) => (
-      <Chip
-        label={params.value}
-        color={params.value === 'Active' ? 'success' : 'default'}
-        size="small"
-        variant="outlined"
-      />
-    ),
+    renderCell: (params) => {
+      const status = (params.value || '').toString().trim().toLowerCase();
+      let label = 'Unknown';
+      let color = 'default';
+      let icon = <BlockIcon fontSize="small" />;
+      if (status === 'active') {
+        label = 'Active';
+        color = 'success';
+        icon = <CheckCircleIcon fontSize="small" />;
+      } else if (status === 'lead') {
+        label = 'Lead';
+        color = 'info';
+        icon = <StarIcon fontSize="small" />;
+      } else if (status === 'inactive') {
+        label = 'Inactive';
+        color = 'default';
+        icon = <BlockIcon fontSize="small" />;
+      }
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            label={label}
+            color={color}
+            size="small"
+            variant="outlined"
+            icon={icon}
+          />
+        </Box>
+      );
+    },
   },
   {
     field: 'segments',
@@ -97,6 +123,7 @@ function Customers() {
   const [selectedSegments, setSelectedSegments] = useState([]);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -195,12 +222,19 @@ function Customers() {
 
   const handleSubmit = async () => {
     try {
+      const payload = {
+        ...form,
+        status: form.status || 'Active',
+        segments: form.segments || [],
+        lastActivity: form.lastActivity || new Date().toISOString(),
+      };
+
       if (dialogMode === 'add') {
-        await customerAPI.createCustomer(form);
-        setSnackbar({ open: true, message: 'Customer added!', severity: 'success' });
+        await customerAPI.createCustomer(payload);
+        setSnackbar({ open: true, message: 'Customer added successfully!', severity: 'success' });
       } else {
-        await customerAPI.updateCustomer(selectedCustomer._id, form);
-        setSnackbar({ open: true, message: 'Customer updated!', severity: 'success' });
+        await customerAPI.updateCustomer(selectedCustomer._id, payload);
+        setSnackbar({ open: true, message: 'Customer updated successfully!', severity: 'success' });
       }
       handleCloseDialog();
       fetchCustomers();
@@ -248,20 +282,47 @@ function Customers() {
     }
   };
 
+  const handleRestore = async (customer) => {
+    try {
+      await customerAPI.updateCustomer(customer._id, { status: 'Active' });
+      setSnackbar({ open: true, message: 'Customer restored!', severity: 'success' });
+      fetchCustomers();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.message || 'Restore failed',
+        severity: 'error',
+      });
+    }
+  };
+
   const columns = [
     ...columnsBase,
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 140,
       renderCell: (params) => (
-        <>
-          <Tooltip title="More actions">
-            <IconButton onClick={(e) => handleMenuOpen(e, params.row)} size="small">
-              <MoreVertIcon />
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Edit">
+            <IconButton onClick={() => handleOpenDialog('edit', params.row)} size="small">
+              <EditIcon />
             </IconButton>
           </Tooltip>
-        </>
+          {params.row.status === 'Inactive' ? (
+            <Tooltip title="Restore">
+              <IconButton onClick={() => handleRestore(params.row)} size="small" color="success">
+                <RestoreIcon />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="More actions">
+              <IconButton onClick={(e) => handleMenuOpen(e, params.row)} size="small">
+                <MoreVertIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       ),
       sortable: false,
       filterable: false,
@@ -287,6 +348,12 @@ function Customers() {
             />
           </Button>
           <Button
+            variant="outlined"
+            onClick={() => setShowInactive((prev) => !prev)}
+          >
+            {showInactive ? 'Show Active' : 'Show Inactive'}
+          </Button>
+          <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
@@ -306,12 +373,31 @@ function Customers() {
       ) : (
         <div style={{ height: 600, width: '100%' }}>
           <DataGrid
-            rows={rows}
+            rows={rows.filter(row => showInactive ? row.status === 'Inactive' : row.status !== 'Inactive')}
             columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10, 25, 50]}
+            checkboxSelection
             disableSelectionOnClick
-            density="comfortable"
+            loading={loading}
+            error={error}
+            sx={{ 
+              height: 400, 
+              width: '100%',
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-row:nth-of-type(odd)': {
+                backgroundColor: '#f8fafc',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f1f5f9',
+                borderBottom: '2px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontWeight: 600,
+              },
+            }}
           />
         </div>
       )}
@@ -330,6 +416,7 @@ function Customers() {
                 onChange={handleFormChange}
                 fullWidth
                 required
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -341,6 +428,7 @@ function Customers() {
                 fullWidth
                 required
                 type="email"
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -351,10 +439,26 @@ function Customers() {
                   value={form.status}
                   onChange={handleFormChange}
                   label="Status"
+                  variant="outlined"
                 >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                  <MenuItem value="Lead">Lead</MenuItem>
+                  <MenuItem value="Active">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CheckCircleIcon color="success" fontSize="small" />
+                      <Typography>Active</Typography>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="Lead">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <StarIcon color="info" fontSize="small" />
+                      <Typography>Lead</Typography>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="Inactive">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <BlockIcon color="action" fontSize="small" />
+                      <Typography>Inactive</Typography>
+                    </Box>
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -367,6 +471,7 @@ function Customers() {
                 onChange={handleFormChange}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12}>
@@ -377,6 +482,7 @@ function Customers() {
                   value={selectedSegments}
                   onChange={handleSegmentChange}
                   label="Segments"
+                  variant="outlined"
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
@@ -401,7 +507,7 @@ function Customers() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={handleSubmit} variant="contained" color="primary">
             {dialogMode === 'add' ? 'Add' : 'Save'}
           </Button>
         </DialogActions>

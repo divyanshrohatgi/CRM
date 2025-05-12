@@ -45,6 +45,11 @@ const customerSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Lead', 'Inactive'],
+    default: 'Active'
   }
 }, {
   timestamps: true

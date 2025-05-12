@@ -74,4 +74,10 @@ export const dashboardAPI = {
   getStats: () => api.get('/api/dashboard/stats'),
 };
 
+// AI API
+export const aiAPI = {
+  segmentRules: (prompt) => api.post('/api/ai/segment-rules', { prompt }),
+  messageSuggestions: (objective, audience) => api.post('/api/ai/message-suggestions', { objective, audience }),
+};
+
 export default api; 

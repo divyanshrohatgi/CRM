@@ -10,9 +10,10 @@ import {
   useTheme,
   TextField,
   Alert,
-  Stack
+  Avatar,
+  Divider
 } from '@mui/material';
-import { Google as GoogleIcon } from '@mui/icons-material';
+import { Google as GoogleIcon, Lock as LockIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { setCredentials } from '../store/slices/authSlice';
 
@@ -72,85 +73,111 @@ function Login() {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #e3f0ff 0%, #f9f9f9 100%)',
+      }}
+    >
+      <Container maxWidth="xs">
         <Paper
-          elevation={3}
+          elevation={6}
           sx={{
-            padding: theme.spacing(4),
+            p: 4,
+            borderRadius: 4,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: '100%',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+            backdropFilter: 'blur(4px)',
           }}
         >
-          <Typography component="h1" variant="h5" gutterBottom>
-            Welcome to Mini CRM
+          <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56, mb: 2 }}>
+            <LockIcon fontSize="large" />
+          </Avatar>
+          <Typography component="h1" variant="h4" fontWeight={700} gutterBottom>
+            Sign In
           </Typography>
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Sign in to manage your customers, segments, and campaigns
+          <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 3 }}>
+            Welcome back! Sign in to manage your customers, segments, and campaigns
           </Typography>
-          <Stack spacing={2} sx={{ width: '100%' }}>
-            {error && <Alert severity="error">{error}</Alert>}
-            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                disabled={loading}
-                sx={{ mt: 2, mb: 1 }}
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </form>
-            <Button
+          {error && <Alert severity="error" sx={{ width: '100%', mb: 1 }}>{error}</Alert>}
+          <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+            <TextField
+              margin="normal"
+              required
               fullWidth
-              variant="outlined"
-              startIcon={<GoogleIcon />}
-              onClick={handleGoogleLogin}
-              sx={{ mt: 1 }}
-            >
-              Sign in with Google
-            </Button>
-            <Button
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoFocus
+              sx={{ borderRadius: 2 }}
+            />
+            <TextField
+              margin="normal"
+              required
               fullWidth
-              variant="text"
-              onClick={() => navigate('/signup')}
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              sx={{ borderRadius: 2 }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              sx={{ mt: 2, mb: 1, py: 1.5, fontWeight: 600, fontSize: '1.1rem', borderRadius: 2 }}
             >
-              Don't have an account? Sign up
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-          </Stack>
+          </form>
+          <Divider sx={{ width: '100%', my: 2 }}>or</Divider>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleLogin}
+            sx={{
+              mb: 1,
+              py: 1.2,
+              fontWeight: 600,
+              borderRadius: 2,
+              background: '#fff',
+              color: '#4285F4',
+              borderColor: '#4285F4',
+              '&:hover': {
+                background: '#f1f8ff',
+                borderColor: '#4285F4',
+              },
+            }}
+          >
+            Sign in with Google
+          </Button>
+          <Button
+            fullWidth
+            variant="text"
+            onClick={() => navigate('/signup')}
+            sx={{ mt: 1, color: 'text.secondary', fontWeight: 500 }}
+          >
+            Don&apos;t have an account? <span style={{ color: theme.palette.primary.main, marginLeft: 4 }}>Sign up</span>
+          </Button>
+          <Box sx={{ mt: 4, textAlign: 'center', width: '100%' }}>
+            <Typography variant="caption" color="text.secondary">
+              Powered by <b>OpenAI</b> & Material UI
+            </Typography>
+          </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 }
 

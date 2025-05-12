@@ -35,7 +35,9 @@ function MetricCard({ title, value, icon, color, subtitle }) {
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: theme.shadows[4]
-        }
+        },
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+        borderRadius: 2,
       }}
     >
       <Box
@@ -189,6 +191,21 @@ function Dashboard() {
                     No recent activity to display
                   </Typography>
                 )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Campaign Performance Chart</Typography>
+              <Box sx={{ mt: 2, height: 300 }}>
+                {/* Placeholder for a chart component */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', bgcolor: '#f8fafc', borderRadius: 2 }}>
+                  <Typography variant="body2" color="text.secondary">Chart will be displayed here</Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>

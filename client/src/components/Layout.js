@@ -26,6 +26,8 @@ import SegmentIcon from '@mui/icons-material/Segment';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
@@ -48,6 +50,7 @@ function Layout() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -67,64 +70,95 @@ function Layout() {
   };
 
   const drawer = (
-    <div>
-      <Toolbar 
-        sx={{ 
-          justifyContent: 'center', 
-          background: 'linear-gradient(45deg, #2196F3 30%, #1976D2 90%)',
-          color: 'white',
-          minHeight: '80px'
-        }}
-      >
-        <Typography variant="h5" noWrap component="div" sx={{ fontWeight: 600 }}>
-          CRM
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List sx={{ pt: 2 }}>
-        {navItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            component={Link}
-            to={item.path}
-            selected={location.pathname.startsWith(item.path)}
-            sx={{
-              mx: 1,
-              my: 0.5,
-              borderRadius: 2,
-              '&.Mui-selected': {
-                bgcolor: alpha('#1976d2', 0.1),
-                color: '#1976d2',
-                fontWeight: 600,
-                '&:hover': {
-                  bgcolor: alpha('#1976d2', 0.15),
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div>
+        <Toolbar 
+          sx={{ 
+            justifyContent: collapsed ? 'center' : 'space-between', 
+            background: 'linear-gradient(45deg, #3f51b5 30%, #002984 90%)',
+            color: 'white',
+            minHeight: '80px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            px: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <img src="/logo.png" alt="CRM Logo" style={{ height: 40 }} />
+            {!collapsed && (
+              <Typography variant="h5" noWrap component="div" sx={{ fontWeight: 600 }}>
+                CRM
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={() => setCollapsed((prev) => !prev)} sx={{ color: 'white', ml: 1 }}>
+            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        </Toolbar>
+        <Divider />
+        <List sx={{ pt: 2 }}>
+          {navItems.map((item) => (
+            <ListItem
+              button
+              key={item.text}
+              component={Link}
+              to={item.path}
+              selected={location.pathname.startsWith(item.path)}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                minHeight: 48,
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                px: collapsed ? 1 : 2,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  fontWeight: 700,
+                  boxShadow: 2,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
                 },
-              },
-              '&:hover': {
-                bgcolor: alpha('#1976d2', 0.05),
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-            onClick={() => isMobile && setMobileOpen(false)}
-          >
-            <ListItemIcon sx={{ 
-              color: 'inherit',
-              minWidth: '40px'
-            }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText 
-              primary={item.text} 
-              primaryTypographyProps={{
-                fontSize: '0.95rem',
-                fontWeight: location.pathname.startsWith(item.path) ? 600 : 400
+                '&:hover': {
+                  bgcolor: 'primary.light',
+                  color: 'primary.dark',
+                },
+                transition: 'all 0.2s',
               }}
-            />
-          </ListItem>
-        ))}
-      </List>
-    </div>
+              onClick={() => isMobile && setMobileOpen(false)}
+            >
+              <ListItemIcon sx={{ 
+                color: 'inherit',
+                minWidth: collapsed ? 'unset' : '40px',
+                justifyContent: 'center',
+              }}>
+                {item.icon}
+              </ListItemIcon>
+              {!collapsed && (
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    fontSize: '0.95rem',
+                    fontWeight: location.pathname.startsWith(item.path) ? 700 : 400
+                  }}
+                />
+              )}
+            </ListItem>
+          ))}
+        </List>
+      </div>
+      <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', gap: 2, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+        <Avatar sx={{ bgcolor: '#3f51b5', color: 'white', width: 36, height: 36, fontWeight: 600 }}>
+          {user?.name ? user.name[0].toUpperCase() : 'U'}
+        </Avatar>
+        {!collapsed && (
+          <Box>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>{user?.name || 'User'}</Typography>
+            <Typography variant="body2" color="text.secondary">{user?.email || ''}</Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 
   return (
@@ -139,7 +173,7 @@ function Layout() {
         position="fixed" 
         sx={{ 
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          background: 'linear-gradient(45deg, #2196F3 30%, #1976D2 90%)',
+          background: 'linear-gradient(45deg, #3f51b5 30%, #002984 90%)',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}
       >
@@ -178,7 +212,7 @@ function Layout() {
             <Avatar 
               sx={{ 
                 bgcolor: '#fff', 
-                color: '#1976d2',
+                color: '#3f51b5',
                 width: 36,
                 height: 36,
                 fontWeight: 600
@@ -252,9 +286,14 @@ function Layout() {
             display: { xs: 'none', md: 'block' },
             '& .MuiDrawer-paper': { 
               boxSizing: 'border-box', 
-              width: drawerWidth,
+              width: collapsed ? 80 : drawerWidth,
               borderRight: 'none',
-              boxShadow: '2px 0 8px rgba(0,0,0,0.1)'
+              boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+              transition: 'width 0.2s',
+              overflowX: 'hidden',
+              borderTopRightRadius: 24,
+              borderBottomRightRadius: 24,
+              background: 'linear-gradient(135deg, #f8fafc 0%, #e3eafc 100%)',
             },
           }}
           open

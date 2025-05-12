@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import OpenAI from 'openai';
+import User from './models/user.model.js';   
 
 // Load environment variables
 dotenv.config();

@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: CRM API
+  version: 1.0.0
+  description: API documentation for the CRM Platform
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /api/auth/login:
+    post:
+      summary: User login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /api/auth/google:
+    get:
+      summary: Google OAuth login
+      tags: [Authentication]
+      responses:
+        '302':
+          description: Redirect to Google login
+
+  /api/auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Authentication successful
+        '401':
+          description: Authentication failed 

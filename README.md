@@ -1,152 +1,134 @@
-# Mini CRM Platform
+# CRM Campaign Management App
 
-A modern CRM platform built with the MERN stack that enables customer segmentation, personalized campaign delivery, and intelligent insights.
+A modern CRM platform for ingesting customer data, building audience segments, and running personalized campaigns with robust delivery tracking and a clean, intuitive UI.
 
-## Features
+---
 
-- 🔐 Google OAuth 2.0 Authentication
-- 📊 Customer Data Management
-- 🎯 Dynamic Audience Segmentation
-- 📨 Campaign Management
-- 📊 Campaign Analytics
-- 🤖 AI-Powered Features
-  - Natural Language to Segment Rules
-  - AI-Driven Message Suggestions
-  - Campaign Performance Summarization
+## 🚀 Live Demo
 
-## Tech Stack
+- **Frontend:** [https://your-frontend-url.vercel.app](https://your-frontend-url.vercel.app)
+- **Backend API:** [https://crm-4243.onrender.com](https://crm-4243.onrender.com)
+- **API Docs (Swagger):** [https://crm-4243.onrender.com/api-docs](https://crm-4243.onrender.com/api-docs)
 
-- **Frontend**: React.js
-- **Backend**: Node.js with Express.js
-- **Database**: MongoDB
-- **Authentication**: Google OAuth 2.0
-- **Message Broker**: RabbitMQ (for async processing)
-- **AI Integration**: OpenAI API
+---
 
-## Project Structure
+## 🛠 Tech Stack
 
-```
-crm/
-├── client/                 # React frontend
-├── server/                 # Node.js backend
-├── .env.example           # Example environment variables
-└── README.md             # Project documentation
-```
+- **Frontend:** React.js, Material-UI (Vercel)
+- **Backend:** Node.js (Express) (Render)
+- **Database:** MongoDB Atlas
+- **Pub-Sub:** RabbitMQ (CloudAMQP)
+- **Authentication:** Google OAuth 2.0
+- **API Docs:** Swagger UI
 
-## Prerequisites
+---
 
-- Node.js (v16 or higher)
-- MongoDB
-- RabbitMQ
-- Google Cloud Console account (for OAuth)
-- OpenAI API key
+## 📦 Setup Instructions (for local development)
 
-## Setup Instructions
-
-### Backend Setup
-
-1. Navigate to the server directory:
+1. **Clone the repository**
    ```bash
-   cd server
+   git clone https://github.com/yourusername/your-crm-repo.git
+   cd your-crm-repo
    ```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+2. **Backend Setup**
+   - Go to the backend directory:
+     ```bash
+     cd server
+     ```
+   - Install dependencies:
+     ```bash
+     npm install
+     ```
+   - Create a `.env` file with:
+     ```
+     MONGODB_URI=your-mongodb-atlas-uri
+     RABBITMQ_URL=your-cloudamqp-url
+     GOOGLE_CLIENT_ID=your-google-client-id
+     GOOGLE_CLIENT_SECRET=your-google-client-secret
+     SESSION_SECRET=your-session-secret
+     FRONTEND_URL=http://localhost:3000
+     ```
+   - Start the backend:
+     ```bash
+     npm start
+     ```
+   - Access API docs at: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
 
-3. Create a .env file based on .env.example:
-   ```bash
-   cp .env.example .env
-   ```
+3. **Frontend Setup**
+   - Go to the frontend directory:
+     ```bash
+     cd ../client
+     ```
+   - Install dependencies:
+     ```bash
+     npm install
+     ```
+   - Create a `.env` file with:
+     ```
+     REACT_APP_API_URL=http://localhost:5000
+     ```
+   - Start the frontend:
+     ```bash
+     npm start
+     ```
+   - Access the app at: [http://localhost:3000](http://localhost:3000)
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+---
 
-### Frontend Setup
+## 🌐 Deployment Notes
 
-1. Navigate to the client directory:
-   ```bash
-   cd client
-   ```
+- **Frontend** is deployed on Vercel:  
+  ([https://your-frontend-url.vercel.app](https://crmsample-git-main-divyanshrohatgis-projects.vercel.app/))
+  - Set `REACT_APP_API_URL` in Vercel to your Render backend URL.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+- **Backend** is deployed on Render:  
+  [https://crm-4243.onrender.com](https://crm-4243.onrender.com)
+  - Set all environment variables in Render's dashboard.
 
-3. Create a .env file based on .env.example:
-   ```bash
-   cp .env.example .env
-   ```
+- **MongoDB** is hosted on MongoDB Atlas.
+- **RabbitMQ** is hosted on CloudAMQP.
 
-4. Start the development server:
-   ```bash
-   npm start
-   ```
+---
 
-## API Documentation
+## 🔐 Authentication
 
-The API documentation is available at `/api-docs` when running the server.
+- Only authenticated users (Google OAuth) can access the app.
+- On first login, you'll be prompted to sign in with Google.
 
-## Environment Variables
+---
 
-### Backend (.env)
-```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/crm
-JWT_SECRET=your_jwt_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-RABBITMQ_URL=amqp://localhost
-OPENAI_API_KEY=your_openai_api_key
-```
+## 🧪 API Documentation
 
-### Frontend (.env)
-```
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
-```
+- Visit [https://crm-4243.onrender.com/api-docs](https://crm-4243.onrender.com/api-docs) for Swagger UI and try out all endpoints.
 
-## Architecture
+---
 
-The application follows a microservices architecture with the following components:
+## 📝 Demo Data
 
-1. **API Layer**: Handles request validation and routing
-2. **Message Broker**: Manages asynchronous processing of data ingestion and campaign delivery
-3. **Consumer Services**: Process messages from the queue for data persistence and campaign delivery
-4. **AI Service**: Handles natural language processing and campaign insights
+- Use the Import button in Customers to upload sample data (CSV/XLSX).
+- Or use the API to POST customers/orders.
 
-## Known Limitations
+---
 
-- Campaign delivery simulation uses a dummy vendor API
-- AI features require OpenAI API key
-- Local development requires MongoDB and RabbitMQ to be running
+## 🖥️ Screenshots
 
-## Contributing
+_Add screenshots of the dashboard, segment builder, campaign history, etc._
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+---
 
-# AI Integration
+## 📹 Demo Video
 
-This CRM app integrates with OpenAI's GPT-3.5 for:
-- **Natural language to segment rules** (describe your audience in plain English)
-- **AI-driven message suggestions** (generate campaign copy from an objective)
+_Link to your demo video here._
 
-**Backend:**
-- See `server/src/routes/ai.routes.js` for real OpenAI API integration.
-- If you set `USE_OPENAI_MOCK=true` in your `.env`, the backend will return mock responses for demo/testing (useful if you run out of OpenAI quota).
-- If you want to use the real API, set `USE_OPENAI_MOCK=false` and provide a valid `OPENAI_API_KEY` in your `.env`.
+---
 
-**Frontend:**
-- The UI will work with either real or mock responses, so you can demo the AI features even if quota is exceeded.
+## 👨‍💻 Author
 
-**Note for Reviewers:**
-- The code is production-ready for real OpenAI integration, but may use mock responses for demo due to quota limits.
-- You can verify the real integration by inspecting the backend code and `.env` config. 
+- [Divyansh Rohatgi](https://github.com/divyanshrohatgi)
+
+---
+
+## 📄 License
+
+MIT 

@@ -10,7 +10,7 @@ const passport = require('passport');
 const OpenAI = require('openai');
 require('dotenv').config();
 require('./middleware/passport');
-
+app.set('trust proxy', true);
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const customerRoutes = require('./routes/customer.routes');

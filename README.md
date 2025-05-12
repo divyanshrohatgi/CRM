@@ -6,7 +6,7 @@ A modern CRM platform for ingesting customer data, building audience segments, a
 
 ## 🚀 Live Demo
 
-- **Frontend:** [https://your-frontend-url.vercel.app](https://your-frontend-url.vercel.app)
+- **Frontend:** ([https://your-frontend-url.vercel.app](https://crmsample-git-main-divyanshrohatgis-projects.vercel.app/))
 - **Backend API:** [https://crm-4243.onrender.com](https://crm-4243.onrender.com)
 - **API Docs (Swagger):** [https://crm-4243.onrender.com/api-docs](https://crm-4243.onrender.com/api-docs)
 
